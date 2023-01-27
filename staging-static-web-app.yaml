@@ -3,12 +3,12 @@ name: Azure Static Web Apps "default" CI/CD
 pr:
   branches:
     include:
-     - main
+    - main
   
 jobs:
 - job: build_and_deploy_job
   displayName: Build and deploy job
-  condition: or(eq(variables['Build.Reason'], 'Manual'), or(eq(variables['Build.Reason'], 'PullRequest)))
+  condition: or(eq(variables['Build.Reason'], 'Manual'), eq(variables['Build.Reason'], 'PullRequest'))
   pool:
     vmImage: ubuntu-latest
   variables: 
@@ -23,4 +23,3 @@ jobs:
       api_location: 'api' # Api source code path relative to cwd
       output_location: 'public' # Built app content directory relative to app_location - optional
       cwd: '$(System.DefaultWorkingDirectory)/myapp' # Working directory - optional
-      azure_static_web_apps_api_token: $(deployment_token)

@@ -3,7 +3,12 @@ trigger:
 
 pool:
   vmImage: ubuntu-latest
-  
+
+
+variables:
+  swa_url: $[ stageDependencies.deploy_staigng.deploy.outputs['AzureStaticWebApp.static_web_app_url']]
+  deploymentToken: $[ stageDependencies.Build.IaC.outputs['deploy.deploymentToken'] ]
+
 stages:
 - stage: Build
   jobs:
@@ -44,26 +49,21 @@ stages:
         azure_static_web_apps_api_token: $(token-variable)
         deployment_environment: staging
         workingDirectory: $(Pipeline.Workspace)
- 
- variables:
-  swa_url: $[ stageDependencies.deploy_staigng.deploy.outputs['AzureStaticWebApp.static_web_app_url']]
-  deploymentToken: $[ stageDependencies.Build.IaC.outputs['deploy.deploymentToken'] ]
-        
- - stage: review_by_user
-   displayName: Review stage
-   jobs: 
-   - job: waitForValidation
-     displayName: Wait for external validation
-     pool: server
-     timeoutInMinutes: 1440 # job times out in a day
-     inputs:
-       notifyUsers: |
-         $(Build.RequestedForEmail)
-       instructions: |
-         Please validate the recent changes to your static web app and click resume. 
-         
-         $(swa_url)
-        onTimeout: 'reject'
+
+- stage: review_by_user
+  displayName: Review stage
+  jobs: 
+  - job: waitForValidation
+    displayName: Wait for external validation
+    pool: server
+    timeoutInMinutes: 1440 # job times out in a day
+    inputs:
+      notifyUsers: |
+        $(Build.RequestedForEmail)
+      instructions: |
+        Please validate the recent changes to your static web app and click resume. 
+        $(swa_url)
+  onTimeout: 'reject'
         
 - stage: deploy_production
   displayName: Deploy to production
@@ -86,5 +86,4 @@ stages:
         skip_app_build: true
         azure_static_web_apps_api_token: $(token-variable)
         workingDirectory: $(Pipeline.Workspace)
- 
       
