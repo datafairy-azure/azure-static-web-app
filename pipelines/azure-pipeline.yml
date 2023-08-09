@@ -6,6 +6,7 @@
 # 3. Deploy to production
 # name-of-the-token: name of the static web app deployment token that you added to your-variable-group
 # your-variable-group: Variable group in Azure DevOps library
+# user-email: Email of the user that will receive the validation request
 
 name: Azure Static Web Apps CI/CD
 
@@ -52,7 +53,7 @@ stages:
       timeoutInMinutes: 1440 # task times out in 1 day
       inputs:
           notifyUsers: |
-              your-email@mail.com
+              $(user-email)
           instructions: 'Please validate the build configuration and resume'
           onTimeout: 'reject'
 
