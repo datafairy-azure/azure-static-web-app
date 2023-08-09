@@ -1,0 +1,78 @@
+# Pipeline that deploys a web app to staging and production environments and waits for validation before deploying to production
+# This pipeline is triggered by a pull request to the staging branch or by a manual trigger
+# The pipeline is composed of 3 stages:
+# 1. Deploy to staging
+# 2. Wait for validation
+# 3. Deploy to production
+# name-of-the-token: name of the static web app deployment token that you added to your-variable-group
+# your-variable-group: Variable group in Azure DevOps library
+
+name: Azure Static Web Apps CI/CD
+
+trigger: 
+ - None
+
+pr:
+  branches:
+    include:
+      - staging
+
+stages:
+- stage: deploy_staging
+  displayName: Deploy to staging
+  jobs:
+  - job: build_and_deploy_job
+    condition: or(eq(variables['Build.Reason'], 'Manual'), eq(variables['Build.Reason'], 'PullRequest'))
+    displayName: Build and Deploy Job
+    pool:
+      vmImage: ubuntu-latest
+    variables:
+    - group: $(your-variable-group)
+    steps:
+    - checkout: self
+      submodules: true
+    - task: AzureStaticWebApp@0
+      inputs:
+        deployment_environment: staging
+        skip_app_build: true
+        azure_static_web_apps_api_token: $(name-of-the-token)
+        app_location: "/azure-static-web-app/app" # App source code path
+        api_location: "" # Api source code path - optional
+        output_location: "/azure-static-web-app/build" # Built app content directory - optional
+
+- stage: review_by_user
+  displayName: Review stage
+  jobs: 
+  - job: waitForValidation
+    displayName: Wait for external validation
+    pool: server
+    timeoutInMinutes: 1440 # job times out in a day
+    steps:   
+    - task: ManualValidation@0
+      timeoutInMinutes: 1440 # task times out in 1 day
+      inputs:
+          notifyUsers: |
+              your-email@mail.com
+          instructions: 'Please validate the build configuration and resume'
+          onTimeout: 'reject'
+
+- stage: deploy_production
+  displayName: Deploy to production
+  jobs:
+  - job: build_and_deploy_job
+    condition: or(eq(variables['Build.Reason'], 'Manual'), eq(variables['Build.Reason'], 'PullRequest'))
+    displayName: Build and Deploy Job
+    pool:
+      vmImage: ubuntu-latest
+    variables:
+    - group: $(your-variable-group)
+    steps:
+    - checkout: self
+      submodules: true
+    - task: AzureStaticWebApp@0
+      inputs:
+        skip_app_build: true
+        azure_static_web_apps_api_token: $(name-of-the-token)
+        app_location: "/azure-static-web-app/app" # App source code path
+        api_location: "" # Api source code path - optional
+        output_location: "/azure-static-web-app/build" # Built app content directory - optional
